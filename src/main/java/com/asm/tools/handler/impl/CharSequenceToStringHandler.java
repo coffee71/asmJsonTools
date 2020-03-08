@@ -2,6 +2,7 @@ package com.asm.tools.handler.impl;
 
 import com.asm.tools.classloader.HotspotClassLoader;
 import com.asm.tools.constants.ToStringHandlerConstants;
+import com.asm.tools.model.JsonContext;
 import com.asm.tools.utils.ClassUtils;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -16,16 +17,13 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 public class CharSequenceToStringHandler extends SingleElementToStringHandler {
     /**
      * 将属性valueappend到StringBuffer
-     * @param cw
-     * @param ga
+     * @param context
      * @param clazz
      * @param field
-     * @param classLoader
-     * @param updateClassFile
      */
     @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
-                            HotspotClassLoader classLoader, boolean updateClassFile) {
+    public void appendValue(JsonContext context, Class clazz, Field field) {
+        GeneratorAdapter ga = context.getGa();
         Class fieldClazz = field.getType();
         ga.visitLdcInsn("\"");
         ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");

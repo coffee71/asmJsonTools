@@ -6,6 +6,7 @@ import com.asm.tools.constants.ToStringHandlerConstants;
 import com.asm.tools.exception.AsmBusinessException;
 import com.asm.tools.handler.ToStringHandler;
 import com.asm.tools.handler.ToStringHandlerFactory;
+import com.asm.tools.model.JsonContext;
 import com.asm.tools.utils.ClassUtils;
 import com.asm.tools.utils.LocalIndexUtil;
 import org.objectweb.asm.ClassWriter;
@@ -23,15 +24,13 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
     /**
      * 将属性value append到StringBuffer
      *
-     * @param cw
-     * @param ga
+     * @param context
      * @param clazz
      * @param field
-     * @param updateClassFile
      */
     @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
-                            HotspotClassLoader classLoader, boolean updateClassFile) {
+    public void appendValue(JsonContext context, Class clazz, Field field) {
+        GeneratorAdapter ga = context.getGa();
         try {
             ga.visitLdcInsn("[");
             ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
@@ -78,7 +77,7 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
 
             //元素生成json-value
             //将Class clazz 参数由clazz改为传field.getClass()，递归调用时clazz应该传的是正在解析的类型  2020.03.08
-            appendElementValue(cw, ga, field, field.getClass(), elementClass, classLoader, updateClassFile);
+            appendElementValue(context, field, field.getClass(), elementClass);
             //判断如果当前不是最后一个元素则加,
             appendComma(ga, iIndex, lengthIndex);
             //i++
@@ -138,16 +137,14 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
 
     /**
      * 集合元素生成json-value
-     * @param cw
-     * @param ga
+     * @param context
      * @param field
      * @param clazz
      * @param elementClass
-     * @param classLoader
-     * @param updateClassFile
      */
-    protected void appendElementValue(ClassWriter cw, GeneratorAdapter ga, Field field, Class clazz, Class elementClass,
-                                      HotspotClassLoader classLoader, boolean updateClassFile) {
+    protected void appendElementValue(JsonContext context, Field field, Class clazz, Class elementClass) {
+        GeneratorAdapter ga = context.getGa();
+
         ToStringHandler elementHandler = ToStringHandlerFactory.getInstance().getToStringHandler(elementClass);
 
         if (elementClass.isPrimitive()) {
@@ -169,16 +166,15 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
             ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
         } else if (elementClass.isArray() || Collection.class.isAssignableFrom(elementClass)) {
             //数组、集合、Map直接赋值就行
-            ((ArrayCollectionToStringHandler)elementHandler).appendValueRecursion(cw, ga, field, clazz, elementClass,
-                    classLoader, updateClassFile);
+            ((ArrayCollectionToStringHandler)elementHandler).appendValueRecursion(context, field, clazz, elementClass);
         } else if(Map.class.isAssignableFrom(elementClass)) {
             ToStringHandler toStringHandler = ToStringHandlerFactory.getInstance().getToStringHandler(Map.class);
-            toStringHandler.appendValue(cw, ga, clazz, field, classLoader, updateClassFile);
+            toStringHandler.appendValue(context, clazz, field);
         } else {
             //复杂对象
             int elementIndex = LocalIndexUtil.applyLocalIndex();
             ga.visitVarInsn(ASTORE, elementIndex);
-            AsmJson.overwriteToJsonStringInner(elementClass, classLoader, updateClassFile);
+            AsmJson.overwriteToJsonStringInner(elementClass, context.getClassLoader(), context.isUpdateClassFile());
             ga.visitVarInsn(ALOAD, elementIndex);
             ga.visitMethodInsn(INVOKEVIRTUAL, ClassUtils.getClazzName(elementClass), ToStringHandlerConstants.TO_JSON_METHOD_NAME, "()Ljava/lang/String;");
             ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
@@ -199,16 +195,13 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
     /**
      * 多维数组递归拼接jsonArray
      *
-     * @param cw
-     * @param ga
+     * @param context
      * @param field
      * @param clazz
-     * @param fieldClazz
-     * @param classLoader
-     * @param updateClassFile
+     * @param arrayFieldClass
      */
-    public void appendValueRecursion(ClassWriter cw, GeneratorAdapter ga, Field field, Class clazz, Class fieldClazz,
-                                     HotspotClassLoader classLoader, boolean updateClassFile) {
+    public void appendValueRecursion(JsonContext context, Field field, Class clazz, Class arrayFieldClass) {
+        GeneratorAdapter ga = context.getGa();
         try {
             int elementIndex = LocalIndexUtil.applyLocalIndex();
             ga.visitVarInsn(ASTORE, elementIndex);
@@ -218,7 +211,7 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
             ga.visitVarInsn(ALOAD, elementIndex);
             //for循环遍历数组
             //获取数组元素类型
-            Class elementClass = fieldClazz.getComponentType();
+            Class elementClass = arrayFieldClass.getComponentType();
 
             int arrayIndex = LocalIndexUtil.applyLocalIndex();
             ga.visitVarInsn(ASTORE, arrayIndex);
@@ -253,7 +246,7 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
 //            int elementIndex = LocalIndexUtil.applyLocalIndex();
 //            ga.visitVarInsn(ASTORE, elementIndex);
             //元素生成json-value
-            appendElementValue(cw, ga, field, clazz, elementClass, classLoader, updateClassFile);
+            appendElementValue(context, field, clazz, elementClass);
             //判断如果当前不是最后一个元素则加,
             appendComma(ga, iIndex, arrayLengthIndex);
             //i++

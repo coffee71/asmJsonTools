@@ -6,6 +6,7 @@ import com.asm.tools.constants.ToStringHandlerConstants;
 import com.asm.tools.exception.AsmBusinessException;
 import com.asm.tools.handler.ToStringHandler;
 import com.asm.tools.handler.ToStringHandlerFactory;
+import com.asm.tools.model.JsonContext;
 import com.asm.tools.utils.ClassUtils;
 import com.asm.tools.utils.LocalIndexUtil;
 import org.objectweb.asm.*;
@@ -139,9 +140,10 @@ public class AsmJson {
         ToStringHandlerFactory toStringHandlerFactory = ToStringHandlerFactory.getInstance();
         //遍历属性生成对应的key-value
         List<Field> fields = Arrays.stream(clazz.getDeclaredFields()).filter(field -> ClassUtils.isAccessAble(clazz, field)).collect(Collectors.toList());
+        JsonContext context = new JsonContext(cw, ga, classLoader, updateClassFile);
         for (Field field : fields) {
             ToStringHandler handler = toStringHandlerFactory.getToStringHandler(field.getType());
-            handler.toJsonStringIfNotNull(cw, ga, clazz, field, classLoader, updateClassFile);
+            handler.toJsonStringIfNotNull(context, clazz, field);
         }
         //删除StringBuffer多余的逗号,并补充终结符}
         removeLastComma(ga);

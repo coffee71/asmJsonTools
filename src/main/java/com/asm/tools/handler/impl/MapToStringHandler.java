@@ -2,6 +2,7 @@ package com.asm.tools.handler.impl;
 
 import com.asm.tools.classloader.HotspotClassLoader;
 import com.asm.tools.constants.ToStringHandlerConstants;
+import com.asm.tools.model.JsonContext;
 import com.asm.tools.model.MapGeneric;
 import com.asm.tools.utils.ClassUtils;
 import com.asm.tools.utils.LocalIndexUtil;
@@ -23,10 +24,11 @@ import static org.objectweb.asm.Opcodes.*;
  * 重要：为了简化实现，和保证性能（避免运行时递归动态修改类）目前要求Map必须带有泛型
  */
 public class MapToStringHandler extends ArrayCollectionToStringHandler {
-    @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field, HotspotClassLoader classLoader, boolean updateClassFile) {
-        //获取map上的泛型
 
+    @Override
+    public void appendValue(JsonContext context, Class clazz, Field field) {
+        GeneratorAdapter ga = context.getGa();
+        //获取map上的泛型
         MapGeneric mapGeneric = ClassUtils.getGenericTypeInfo((ParameterizedType) field.getGenericType());
         List<Class> genericTypeList = ClassUtils.getGenericTypeList(field);
         Class keyClazz = genericTypeList.get(0);
@@ -55,7 +57,7 @@ public class MapToStringHandler extends ArrayCollectionToStringHandler {
 
         int entityIndex = appendMapKey(ga, keyClazz);
         ga.visitVarInsn(ALOAD, entityIndex);
-        appendMapValue(cw, ga, clazz, field, classLoader, updateClassFile, valueClazz);
+        appendMapValue(context, clazz, field, valueClazz);
 
         ga.visitVarInsn(ALOAD, iteratorIndex);
         //如果不是最后一个元素则拼接","
@@ -83,9 +85,8 @@ public class MapToStringHandler extends ArrayCollectionToStringHandler {
         return null;
     }
 
-    private void appendMapValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
-                                HotspotClassLoader classLoader, boolean updateClassFile, Class valueClazz) {
-
+    private void appendMapValue(JsonContext context, Class clazz, Field field, Class valueClazz) {
+        GeneratorAdapter ga = context.getGa();
         ga.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getValue", "()Ljava/lang/Object;");
         ga.visitTypeInsn(CHECKCAST, ClassUtils.getClazzName(valueClazz));
         boolean isMapValue = Map.class.isAssignableFrom(valueClazz);
@@ -93,7 +94,7 @@ public class MapToStringHandler extends ArrayCollectionToStringHandler {
         if(isMapValue) {
 //            appendValue(cw, ga, field, clazz, valueClazz, classLoader, updateClassFile);
         } else {
-            super.appendElementValue(cw, ga, field, clazz, valueClazz, classLoader, updateClassFile);
+            super.appendElementValue(context, field, clazz, valueClazz);
         }
 
 

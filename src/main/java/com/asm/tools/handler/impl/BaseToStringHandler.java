@@ -3,6 +3,7 @@ package com.asm.tools.handler.impl;
 import com.asm.tools.classloader.HotspotClassLoader;
 import com.asm.tools.constants.ToStringHandlerConstants;
 import com.asm.tools.handler.ToStringHandler;
+import com.asm.tools.model.JsonContext;
 import com.asm.tools.utils.ClassUtils;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -18,11 +19,11 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public abstract class BaseToStringHandler implements ToStringHandler {
     @Override
-    public void toJsonString(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
-                             HotspotClassLoader classLoader, boolean updateClassFile) {
+    public void toJsonString(JsonContext context, Class clazz, Field field) {
+        GeneratorAdapter ga = context.getGa();
         ga.visitVarInsn(ALOAD, ToStringHandlerConstants.LOCAL_MAIN_STRING_BUFFER);
         appendKey(ga, field.getName());
-        appendValue(cw, ga, clazz, field, classLoader, updateClassFile);
+        appendValue(context, clazz, field);
         ga.visitInsn(POP);
     }
 

@@ -1,18 +1,18 @@
 package com.asm.tools.handler.impl;
 
 import com.asm.tools.AsmJson;
-import com.asm.tools.classloader.HotspotClassLoader;
 import com.asm.tools.constants.ToStringHandlerConstants;
 import com.asm.tools.exception.AsmBusinessException;
+import com.asm.tools.model.JsonContext;
 import com.asm.tools.utils.ClassUtils;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 /**
  * 复杂属性toString
@@ -22,19 +22,17 @@ public class ObjectToStringHandler extends SingleElementToStringHandler {
     /**
      * 将属性value append到StringBuffer
      *
-     * @param cw
-     * @param ga
+     * @param context
      * @param clazz
      * @param field
-     * @param updateClassFile
      */
     @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
-                            HotspotClassLoader classLoader, boolean updateClassFile) {
+    public void appendValue(JsonContext context, Class clazz, Field field) {
+        GeneratorAdapter ga = context.getGa();
         try {
             Class fieldClazz = field.getType();
             //生成toJsonString方法，然后调用toJsonString 将value压入StringBuffer，因为与主类同一个classLoader所以能实现热加载
-            AsmJson.overwriteToJsonStringInner(fieldClazz, classLoader, updateClassFile);
+            AsmJson.overwriteToJsonStringInner(fieldClazz, context.getClassLoader(), context.isUpdateClassFile());
 
             ga.visitVarInsn(ALOAD, ToStringHandlerConstants.LOCAL_THIS);
 

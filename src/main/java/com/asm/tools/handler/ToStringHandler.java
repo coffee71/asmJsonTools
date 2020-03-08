@@ -2,6 +2,7 @@ package com.asm.tools.handler;
 
 import com.asm.tools.classloader.HotspotClassLoader;
 import com.asm.tools.constants.ToStringHandlerConstants;
+import com.asm.tools.model.JsonContext;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -15,28 +16,21 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 public interface ToStringHandler {
 
     /**
-     * @param cw
-     * @param ga
+     * @param context
      * @param clazz
      * @param field
-     * @param classLoader     复杂对象嵌套时需要递归热加载类，因此需要传递classLoader
-     * @param updateClassFile
      */
-    void toJsonString(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
-                      HotspotClassLoader classLoader, boolean updateClassFile);
+    void toJsonString(JsonContext context, Class clazz, Field field);
 
     /**
      * 为非空属性生成json key-value
      *
-     * @param cw
-     * @param ga
+     * @param context
      * @param clazz
      * @param field
-     * @param classLoader     复杂对象嵌套时需要递归热加载类，因此需要传递classLoader
-     * @param updateClassFile
      */
-    default void toJsonStringIfNotNull(ClassWriter cw, GeneratorAdapter ga, Class clazz,
-                                       Field field, HotspotClassLoader classLoader, boolean updateClassFile) {
+    default void toJsonStringIfNotNull(JsonContext context, Class clazz, Field field) {
+        GeneratorAdapter ga = context.getGa();
         Class propertyClazz = field.getType();
         Label nullJudgeLabel = new Label();
         if (!propertyClazz.isPrimitive()) {
@@ -45,7 +39,7 @@ public interface ToStringHandler {
             ga.getField(Type.getType(clazz), field.getName(), Type.getType(propertyClazz));
             ga.visitJumpInsn(IFNULL, nullJudgeLabel);
         }
-        toJsonString(cw, ga, clazz, field, classLoader, updateClassFile);
+        toJsonString(context, clazz, field);
         if (!propertyClazz.isPrimitive()) {
             //如果属性为null则跳过不调用toString
             ga.visitLabel(nullJudgeLabel);
@@ -55,12 +49,11 @@ public interface ToStringHandler {
     /**
      * 将属性value append到StringBuffer
      *
-     * @param cw
-     * @param ga
+     * @param context
      * @param clazz
      * @param field
      */
-    void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field, HotspotClassLoader classLoader, boolean updateClassFile);
+    void appendValue(JsonContext context, Class clazz, Field field);
 
     void appendKey(GeneratorAdapter ga, String fieldName);
 }
