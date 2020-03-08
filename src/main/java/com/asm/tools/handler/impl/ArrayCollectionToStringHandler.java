@@ -1,20 +1,21 @@
 package com.asm.tools.handler.impl;
 
 import com.asm.tools.AsmJson;
-import com.asm.tools.classloader.HotspotClassLoader;
 import com.asm.tools.constants.ToStringHandlerConstants;
 import com.asm.tools.exception.AsmBusinessException;
 import com.asm.tools.handler.ToStringHandler;
 import com.asm.tools.handler.ToStringHandlerFactory;
+import com.asm.tools.model.GenericInfo;
 import com.asm.tools.model.JsonContext;
 import com.asm.tools.utils.ClassUtils;
 import com.asm.tools.utils.LocalIndexUtil;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Map;
 
@@ -75,9 +76,14 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
             ga.visitInsn(AALOAD);
             ga.visitTypeInsn(CHECKCAST, ClassUtils.getClazzName(elementClass));
 
+            //解析泛型嵌套
+            GenericInfo genericInfo = null;
+            if(Array.class.isAssignableFrom(elementClass)) {
+                genericInfo = ClassUtils.getGenericTypeInfo(elementClass, (ParameterizedType) field.getGenericType());
+            }
             //元素生成json-value
             //将Class clazz 参数由clazz改为传field.getClass()，递归调用时clazz应该传的是正在解析的类型  2020.03.08
-            appendElementValue(context, field, field.getClass(), elementClass);
+            appendElementValue(context, elementClass, genericInfo);
             //判断如果当前不是最后一个元素则加,
             appendComma(ga, iIndex, lengthIndex);
             //i++
@@ -137,12 +143,11 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
 
     /**
      * 集合元素生成json-value
+     * 调用前要求elementValue已经压栈
      * @param context
-     * @param field
-     * @param clazz
      * @param elementClass
      */
-    protected void appendElementValue(JsonContext context, Field field, Class clazz, Class elementClass) {
+    protected void appendElementValue(JsonContext context, Class elementClass, GenericInfo genericInfo) {
         GeneratorAdapter ga = context.getGa();
 
         ToStringHandler elementHandler = ToStringHandlerFactory.getInstance().getToStringHandler(elementClass);
@@ -165,11 +170,13 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
             ga.visitLdcInsn("\"");
             ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
         } else if (elementClass.isArray() || Collection.class.isAssignableFrom(elementClass)) {
-            //数组、集合、Map直接赋值就行
-            ((ArrayCollectionToStringHandler)elementHandler).appendValueRecursion(context, field, clazz, elementClass);
+            //fixme 数组、集合直接赋值就行,注意不支持数组与list、map等嵌套的场景
+            ((ArrayCollectionToStringHandler)elementHandler).appendValueRecursion(context, elementClass, genericInfo);
         } else if(Map.class.isAssignableFrom(elementClass)) {
-            ToStringHandler toStringHandler = ToStringHandlerFactory.getInstance().getToStringHandler(Map.class);
-            toStringHandler.appendValue(context, clazz, field);
+            MapToStringHandler toStringHandler = (MapToStringHandler) ToStringHandlerFactory.getInstance().getToStringHandler(Map.class);
+
+            //取出map的泛型信息解析
+            toStringHandler.appendMap(context, genericInfo.getValueMapInfo());
         } else {
             //复杂对象
             int elementIndex = LocalIndexUtil.applyLocalIndex();
@@ -196,11 +203,10 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
      * 多维数组递归拼接jsonArray
      *
      * @param context
-     * @param field
-     * @param clazz
      * @param arrayFieldClass
+     * @param genericInfo
      */
-    public void appendValueRecursion(JsonContext context, Field field, Class clazz, Class arrayFieldClass) {
+    public void appendValueRecursion(JsonContext context, Class arrayFieldClass, GenericInfo genericInfo) {
         GeneratorAdapter ga = context.getGa();
         try {
             int elementIndex = LocalIndexUtil.applyLocalIndex();
@@ -246,7 +252,7 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
 //            int elementIndex = LocalIndexUtil.applyLocalIndex();
 //            ga.visitVarInsn(ASTORE, elementIndex);
             //元素生成json-value
-            appendElementValue(context, field, clazz, elementClass);
+            appendElementValue(context, elementClass, genericInfo);
             //判断如果当前不是最后一个元素则加,
             appendComma(ga, iIndex, arrayLengthIndex);
             //i++

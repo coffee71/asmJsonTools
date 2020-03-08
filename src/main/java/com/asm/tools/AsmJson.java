@@ -26,7 +26,7 @@ import static org.objectweb.asm.Opcodes.*;
  * 使用asm重写toString方法，为类型对象生成json格式字符串（等同于JSONObject.toJSONString())
  * 注意：
  * 1、Map、集合必须声明泛型
- * 2、
+ * 2、不支持数组与map和集合嵌套（获取不到泛型）
  */
 public class AsmJson {
 

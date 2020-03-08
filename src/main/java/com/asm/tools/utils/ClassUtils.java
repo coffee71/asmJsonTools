@@ -1,7 +1,7 @@
 package com.asm.tools.utils;
 
 import com.asm.tools.exception.AsmBusinessException;
-import com.asm.tools.model.MapGeneric;
+import com.asm.tools.model.GenericInfo;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 
@@ -11,9 +11,8 @@ import java.io.FileOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 public class ClassUtils {
@@ -116,57 +115,56 @@ public class ClassUtils {
         }
     }
 
-    public static List<Class> getGenericTypeList(Field field) {
-        try {
-            ParameterizedType listGenericType = (ParameterizedType) field.getGenericType();
-            java.lang.reflect.Type[] listActualTypeArguments = listGenericType.getActualTypeArguments();
-            List<Class> genericTypeList = new ArrayList<>();
-            for(java.lang.reflect.Type type : listActualTypeArguments) {
-                String className = type.getTypeName();
-                if(type instanceof ParameterizedType) {
-                    className = ((ParameterizedType) type).getRawType().getTypeName();
-                }
-                genericTypeList.add(Class.forName(className));
-            }
 
-            return genericTypeList;
-        } catch (ClassNotFoundException e) {
-            throw new AsmBusinessException(e.getMessage(), e);
+    public static GenericInfo getGenericTypeInfo(Class fieldClass, ParameterizedType parameterizedType) {
+        java.lang.reflect.Type[] listActualTypeArguments = parameterizedType.getActualTypeArguments();
+        GenericInfo genericInfo;
+
+        if(Map.class.isAssignableFrom(fieldClass)) {
+            if(listActualTypeArguments.length != 2) {
+                wrapAndThrowError(fieldClass, listActualTypeArguments);
+            }
+            genericInfo = new GenericInfo(listActualTypeArguments[0].getTypeName(), listActualTypeArguments[1].getTypeName());
+
+        } else if(Collection.class.isAssignableFrom(fieldClass)) {
+            //Collection
+            if(listActualTypeArguments.length != 1) {
+                wrapAndThrowError(fieldClass, listActualTypeArguments);
+            }
+            genericInfo = new GenericInfo(listActualTypeArguments[0].getTypeName());
+        } else {
+            return null;
         }
+        analysisMapGenericRecursion(genericInfo);
+
+
+        return genericInfo;
     }
 
-    public static MapGeneric getGenericTypeInfo(ParameterizedType parameterizedType) {
-        java.lang.reflect.Type[] listActualTypeArguments = parameterizedType.getActualTypeArguments();
-
-        if(listActualTypeArguments.length != 2) {
-            final StringBuilder typeNames = new StringBuilder();
-            Arrays.stream(listActualTypeArguments).forEach(t -> {
-                typeNames.append(t.getTypeName()).append(" ");
-            });
-            throw new IllegalArgumentException(String.format("Map泛型参数不正确%s", typeNames.toString()));
-        }
-
-        MapGeneric mapGeneric = new MapGeneric(listActualTypeArguments[0].getTypeName(), listActualTypeArguments[1].getTypeName());
-        analysisMapGenericRecursion(mapGeneric);
-        return mapGeneric;
+    private static void wrapAndThrowError(Class fieldClass, java.lang.reflect.Type[] listActualTypeArguments) {
+        final StringBuilder typeNames = new StringBuilder();
+        Arrays.stream(listActualTypeArguments).forEach(t -> {
+            typeNames.append(t.getTypeName()).append(" ");
+        });
+        throw new IllegalArgumentException(String.format("%s泛型参数不正确%s", fieldClass.getCanonicalName(), typeNames.toString()));
     }
 
     /**
-     * 递归解析Map的泛型
+     * 递归解析Map、Collection的泛型
      * @param mapGeneric
      */
-    private static void analysisMapGenericRecursion(MapGeneric mapGeneric) {
+    private static void analysisMapGenericRecursion(GenericInfo mapGeneric) {
         if(Map.class.isAssignableFrom(mapGeneric.getKeyClass())) {
             //key 存在map递归嵌套
             //fixme 为了实现简单，Map必须声明泛型
-            MapGeneric keySubMapGeneric = analysisMapGenericByName(mapGeneric.getKeyClassName());
+            GenericInfo keySubMapGeneric = analysisMapGenericByName(mapGeneric.getKeyClassName());
             mapGeneric.setKeyMapInfo(keySubMapGeneric);
         }
 
         if(Map.class.isAssignableFrom(mapGeneric.getValueClass())) {
             //value 存在map递归嵌套
             //fixme 为了实现简单，Map必须声明泛型
-            MapGeneric valueSubMapGeneric = analysisMapGenericByName(mapGeneric.getValueClassName());
+            GenericInfo valueSubMapGeneric = analysisMapGenericByName(mapGeneric.getValueClassName());
             mapGeneric.setValueMapInfo(valueSubMapGeneric);
         }
     }
@@ -176,11 +174,11 @@ public class ClassUtils {
      * @param className
      * @return
      */
-    private static MapGeneric analysisMapGenericByName(String className) {
+    private static GenericInfo analysisMapGenericByName(String className) {
         className = className.substring(className.indexOf("<") + 1);
         className = className.substring(0, className.indexOf(">"));
         String[] keyAndValueClassNames = className.split(",");
-        return new MapGeneric(keyAndValueClassNames[0].trim(), keyAndValueClassNames[1].trim());
+        return new GenericInfo(keyAndValueClassNames[0].trim(), keyAndValueClassNames[1].trim());
     }
 
     /**

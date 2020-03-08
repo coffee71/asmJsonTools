@@ -5,7 +5,7 @@ import com.asm.tools.exception.AsmBusinessException;
 /**
  * Map 泛型信息，递归解析
  */
-public class MapGeneric {
+public class GenericInfo {
 
     public String getKeyClassName() {
         return keyClassName;
@@ -33,7 +33,7 @@ public class MapGeneric {
     /**
      * 当key 是Map时不为空，存放key的泛型信息
      */
-    private MapGeneric keyMapInfo;
+    private GenericInfo keyMapInfo;
 
     /**
      * value类型
@@ -42,9 +42,9 @@ public class MapGeneric {
     /**
      * 当value 是map时不为空，存放value的泛型信息
      */
-    private MapGeneric valueMapInfo;
+    private GenericInfo valueMapInfo;
 
-    public MapGeneric(String keyClassName, String valueClassName) {
+    public GenericInfo(String keyClassName, String valueClassName) {
         this.keyClassName = keyClassName;
         this.valueClassName = valueClassName;
 
@@ -63,15 +63,28 @@ public class MapGeneric {
         }
     }
 
+    public GenericInfo(String valueClassName) {
+        this.valueClassName = valueClassName;
+
+        try {
+            if(valueClassName.indexOf("<") >= 0) {
+                valueClassName = valueClassName.substring(0, valueClassName.indexOf("<"));
+            }
+            this.valueClass = Class.forName(valueClassName);
+        } catch (Exception e) {
+            throw new AsmBusinessException(e.getMessage(), e);
+        }
+    }
+
     public Class getKeyClass() {
         return keyClass;
     }
 
-    public MapGeneric getKeyMapInfo() {
+    public GenericInfo getKeyMapInfo() {
         return keyMapInfo;
     }
 
-    public void setKeyMapInfo(MapGeneric keyMapInfo) {
+    public void setKeyMapInfo(GenericInfo keyMapInfo) {
         this.keyMapInfo = keyMapInfo;
     }
 
@@ -80,11 +93,11 @@ public class MapGeneric {
     }
 
 
-    public MapGeneric getValueMapInfo() {
+    public GenericInfo getValueMapInfo() {
         return valueMapInfo;
     }
 
-    public void setValueMapInfo(MapGeneric valueMapInfo) {
+    public void setValueMapInfo(GenericInfo valueMapInfo) {
         this.valueMapInfo = valueMapInfo;
     }
 
