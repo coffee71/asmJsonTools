@@ -22,18 +22,17 @@ public class SingleElementToStringHandler extends BaseToStringHandler {
      *
      * @param cw
      * @param ga
-     * @param fieldName
      * @param clazz
      * @param field
      * @param classLoader
      * @param updateClassFile
      */
     @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, String fieldName, Class clazz, Field field,
+    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
                             HotspotClassLoader classLoader, boolean updateClassFile) {
         Class fieldClazz = field.getType();
 
-        loadFieldValue(ga, clazz, fieldName, fieldClazz);
+        loadFieldValue(ga, clazz, field.getName(), fieldClazz);
         if (!fieldClazz.isPrimitive() && !fieldClazz.isArray()) {
             //为了方便调用append先toString转成String类型，否则Integer等包装类需要对append的方法签名做特殊判断
             ga.visitMethodInsn(INVOKEVIRTUAL, ClassUtils.getClazzName(fieldClazz), "toString", "()Ljava/lang/String;");

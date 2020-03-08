@@ -25,13 +25,12 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
      *
      * @param cw
      * @param ga
-     * @param fieldName
      * @param clazz
      * @param field
      * @param updateClassFile
      */
     @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, String fieldName, Class clazz, Field field,
+    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
                             HotspotClassLoader classLoader, boolean updateClassFile) {
         try {
             ga.visitLdcInsn("[");
@@ -174,7 +173,7 @@ public abstract class ArrayCollectionToStringHandler extends BaseToStringHandler
                     classLoader, updateClassFile);
         } else if(Map.class.isAssignableFrom(elementClass)) {
             ToStringHandler toStringHandler = ToStringHandlerFactory.getInstance().getToStringHandler(Map.class);
-            toStringHandler.appendValue(cw, ga, field.getName(), clazz, field, classLoader, updateClassFile);
+            toStringHandler.appendValue(cw, ga, clazz, field, classLoader, updateClassFile);
         } else {
             //复杂对象
             int elementIndex = LocalIndexUtil.applyLocalIndex();

@@ -18,11 +18,11 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public abstract class BaseToStringHandler implements ToStringHandler {
     @Override
-    public void toJsonString(ClassWriter cw, GeneratorAdapter ga, String fieldName, Class clazz, Field field,
+    public void toJsonString(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
                              HotspotClassLoader classLoader, boolean updateClassFile) {
         ga.visitVarInsn(ALOAD, ToStringHandlerConstants.LOCAL_MAIN_STRING_BUFFER);
-        appendKey(ga, fieldName);
-        appendValue(cw, ga, fieldName, clazz, field, classLoader, updateClassFile);
+        appendKey(ga, field.getName());
+        appendValue(cw, ga, clazz, field, classLoader, updateClassFile);
         ga.visitInsn(POP);
     }
 

@@ -24,7 +24,7 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class MapToStringHandler extends ArrayCollectionToStringHandler {
     @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, String fieldName, Class clazz, Field field, HotspotClassLoader classLoader, boolean updateClassFile) {
+    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field, HotspotClassLoader classLoader, boolean updateClassFile) {
         //获取map上的泛型
 
         MapGeneric mapGeneric = ClassUtils.getGenericTypeInfo((ParameterizedType) field.getGenericType());

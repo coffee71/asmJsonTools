@@ -17,13 +17,12 @@ public interface ToStringHandler {
     /**
      * @param cw
      * @param ga
-     * @param propertyName
      * @param clazz
      * @param field
      * @param classLoader     复杂对象嵌套时需要递归热加载类，因此需要传递classLoader
      * @param updateClassFile
      */
-    void toJsonString(ClassWriter cw, GeneratorAdapter ga, String propertyName, Class clazz, Field field,
+    void toJsonString(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
                       HotspotClassLoader classLoader, boolean updateClassFile);
 
     /**
@@ -31,23 +30,22 @@ public interface ToStringHandler {
      *
      * @param cw
      * @param ga
-     * @param propertyName
      * @param clazz
      * @param field
      * @param classLoader     复杂对象嵌套时需要递归热加载类，因此需要传递classLoader
      * @param updateClassFile
      */
-    default void toJsonStringIfNotNull(ClassWriter cw, GeneratorAdapter ga, String propertyName, Class clazz,
+    default void toJsonStringIfNotNull(ClassWriter cw, GeneratorAdapter ga, Class clazz,
                                        Field field, HotspotClassLoader classLoader, boolean updateClassFile) {
         Class propertyClazz = field.getType();
         Label nullJudgeLabel = new Label();
         if (!propertyClazz.isPrimitive()) {
             //读取属性值
             ga.visitVarInsn(ALOAD, ToStringHandlerConstants.LOCAL_THIS);
-            ga.getField(Type.getType(clazz), propertyName, Type.getType(propertyClazz));
+            ga.getField(Type.getType(clazz), field.getName(), Type.getType(propertyClazz));
             ga.visitJumpInsn(IFNULL, nullJudgeLabel);
         }
-        toJsonString(cw, ga, propertyName, clazz, field, classLoader, updateClassFile);
+        toJsonString(cw, ga, clazz, field, classLoader, updateClassFile);
         if (!propertyClazz.isPrimitive()) {
             //如果属性为null则跳过不调用toString
             ga.visitLabel(nullJudgeLabel);
@@ -59,11 +57,10 @@ public interface ToStringHandler {
      *
      * @param cw
      * @param ga
-     * @param propertyName
      * @param clazz
      * @param field
      */
-    void appendValue(ClassWriter cw, GeneratorAdapter ga, String propertyName, Class clazz, Field field, HotspotClassLoader classLoader, boolean updateClassFile);
+    void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field, HotspotClassLoader classLoader, boolean updateClassFile);
 
     void appendKey(GeneratorAdapter ga, String fieldName);
 }

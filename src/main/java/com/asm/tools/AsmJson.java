@@ -141,7 +141,7 @@ public class AsmJson {
         List<Field> fields = Arrays.stream(clazz.getDeclaredFields()).filter(field -> ClassUtils.isAccessAble(clazz, field)).collect(Collectors.toList());
         for (Field field : fields) {
             ToStringHandler handler = toStringHandlerFactory.getToStringHandler(field.getType());
-            handler.toJsonStringIfNotNull(cw, ga, field.getName(), clazz, field, classLoader, updateClassFile);
+            handler.toJsonStringIfNotNull(cw, ga, clazz, field, classLoader, updateClassFile);
         }
         //删除StringBuffer多余的逗号,并补充终结符}
         removeLastComma(ga);

@@ -24,13 +24,12 @@ public class ObjectToStringHandler extends SingleElementToStringHandler {
      *
      * @param cw
      * @param ga
-     * @param fieldName
      * @param clazz
      * @param field
      * @param updateClassFile
      */
     @Override
-    public void appendValue(ClassWriter cw, GeneratorAdapter ga, String fieldName, Class clazz, Field field,
+    public void appendValue(ClassWriter cw, GeneratorAdapter ga, Class clazz, Field field,
                             HotspotClassLoader classLoader, boolean updateClassFile) {
         try {
             Class fieldClazz = field.getType();
@@ -39,10 +38,10 @@ public class ObjectToStringHandler extends SingleElementToStringHandler {
 
             ga.visitVarInsn(ALOAD, ToStringHandlerConstants.LOCAL_THIS);
 
-            Method getMethod = ClassUtils.getGetMethod(clazz, fieldName, fieldClazz);
+            Method getMethod = ClassUtils.getGetMethod(clazz, field.getName(), fieldClazz);
             if (getMethod == null) {
                 //没有get方法或get方法不是public，直接访问内部属性
-                ga.getField(Type.getType(clazz), fieldName, Type.getType(fieldClazz));
+                ga.getField(Type.getType(clazz), field.getName(), Type.getType(fieldClazz));
                 if (!fieldClazz.isPrimitive() && !fieldClazz.isArray()) {
                     //为了方便调用append先toString转成String类型，否则Integer等包装类需要对append的方法签名做特殊判断
                     ga.visitMethodInsn(INVOKEVIRTUAL, ClassUtils.getClazzName(fieldClazz), ToStringHandlerConstants.TO_JSON_METHOD_NAME, "()Ljava/lang/String;");
