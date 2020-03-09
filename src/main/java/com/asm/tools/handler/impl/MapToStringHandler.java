@@ -103,7 +103,7 @@ public class MapToStringHandler extends ArrayCollectionToStringHandler {
         boolean isMapValue = Map.class.isAssignableFrom(keyClass);
 
         if(isMapValue) {
-            appendMapValue(context, mapGeneric.getKeyMapInfo(), entityIndex);
+            appendMap(context, mapGeneric.getKeyMapInfo());
         } else {
             super.appendElementValue(context, keyClass, mapGeneric.getKeyMapInfo());
         }
@@ -130,7 +130,7 @@ public class MapToStringHandler extends ArrayCollectionToStringHandler {
         boolean isMapValue = Map.class.isAssignableFrom(valueClass);
 
         if(isMapValue) {
-            appendMapValue(context, mapGeneric.getKeyMapInfo(), entityIndex);
+            appendMap(context, mapGeneric.getValueMapInfo());
         } else {
             super.appendElementValue(context, valueClass, mapGeneric.getValueMapInfo());
         }

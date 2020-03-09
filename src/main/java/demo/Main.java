@@ -9,7 +9,7 @@ import java.lang.reflect.ParameterizedType;
 public class Main {
 
     public static void main(String[] args) throws Throwable {
-        testObjectValue();
+        testMapValue();
 //        TestPojo2 pojo = new TestPojo2();
 //        System.out.println(ClassUtils.getGenericTypeInfo((ParameterizedType)pojo.getClass().getField("mapField2").getGenericType()));
     }
