@@ -31,6 +31,8 @@ public class MapToStringHandler extends ArrayCollectionToStringHandler {
         super.loadFieldValue(ga, clazz, field.getName(), field.getType());
 
         appendMap(context, mapGeneric);
+        ga.visitLdcInsn(",");
+        ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
     }
 
     /**
@@ -82,14 +84,13 @@ public class MapToStringHandler extends ArrayCollectionToStringHandler {
         ga.visitJumpInsn(GOTO, iteratorJudgeLabel);
         ga.visitLabel(judgeEndLabel);
 
+
+        //用iterator遍历entitySet end
+        ga.visitInsn(POP);
         //封闭json
         ga.visitVarInsn(ALOAD, ToStringHandlerConstants.LOCAL_MAIN_STRING_BUFFER);
         ga.visitLdcInsn("}");
         ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
-        ga.visitLdcInsn(",");
-        ga.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
-        //用iterator遍历entitySet end
-        ga.visitInsn(POP);
     }
 
     public void appendMapKey(JsonContext context, GenericInfo mapGeneric, int entityIndex) {

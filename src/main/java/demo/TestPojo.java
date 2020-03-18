@@ -26,14 +26,16 @@ public class TestPojo {
 
     private List<SubPojo> subPojoList = new ArrayList<>();
 
-    public Map<String, SubPojo2> mapField = new HashMap<>();
+
+    public Map<String, Map<String, SubPojo2>> mapField = new HashMap<>();
 
     public TestPojo() {
         subPojoArray[0] = new SubPojo2();
         subPojoArray[1] = new SubPojo2();
         subPojoList.add(new SubPojo());
-        mapField.put("f1", new SubPojo2());
-        mapField.put("f1", new SubPojo2());
+        Map<String, SubPojo2> mapField2= new HashMap<>();
+        mapField2.put("f1", new SubPojo2());
+        mapField.put("map嵌套", mapField2);
     }
 
     public SubPojo2[] getSubPojoArray() {
